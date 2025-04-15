@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <!-- Fakultetlar bo‘yicha foydalanuvchilar statistikasi -->
+            <div class="row">
+                {% for faculty in faculties %}
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-gradient-{{ forloop.counter|stringformat:"s" }}">
+                        <div class="inner">
+                            <h2 style="color:white;">{{ faculty.user_count }}</h2>
+                            <p style="color:white;">{{ faculty.name }}</p>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-person"></i>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Diagramlar -->
+            <div class="row">
+                <!-- Hujjatlar Statistikasi -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Oylar bo‘yicha Hujjatlar Statistikasi</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="documentChart" style="height: 250px"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hujjat turlari statistikasi -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Hujjat Turlari</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="documentTypeChart" style="height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kitoblar Statistikasi -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Kitoblar Statistikasi (Oxirgi 12 Oy)</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="bookChart" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oxirgi Harakatlar -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Oxirgi Harakatlar</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                <!-- Oxirgi Hujjatlar -->
+                                {% for document in last_documents %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <a href="{% url 'document_detail' document.pk %}" class="mr-3">
+                                        <img src="{% if document.author.profile_image %}{{ document.author.profile_image.url }}{% else %}{% static 'images/default-profile.png' %}{% endif %}" 
+                                             alt="Author Image" 
+                                             class="img-circle" 
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                    </a>
+                                    <div>
+                                        <a href="{% url 'document_detail' document.pk %}" style="text-decoration: none; color: black;">
+                                            <strong>{{ document.name }}</strong>
+                                        </a><br>
+                                        <small>
+                                            Muallif: {{ document.author.first_name }} {{ document.author.last_name }}<br>
+                                            Tur: {{ document.type.name }}<br>
+                                            Qo'shilgan sana: {{ document.created|date:"d.m.Y" }}
+                                        </small>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            
+                                <!-- Oxirgi Kitoblar -->
+                                {% for book in last_books %}
+                                <li class="list-group-item d-flex align-items-center">
+                                    <a href="#" class="mr-3">
+                                        <img src="{% if book.author.profile_image %}{{ book.author.profile_image.url }}{% else %}{% static 'images/default-profile.png' %}{% endif %}" 
+                                            alt="Author Image" 
+                                            class="img-circle" 
+                                            style="width: 50px; height: 50px; object-fit: cover;">
+                                    </a>
+                                    <div>
+                                        <a href="#" style="text-decoration: none; color: black;">
+                                            <strong>{{ book.name }}</strong>
+                                        </a><br>
+                                        <small>
+                                            Muallif: {{ book.author.first_name }} {{ book.author.last_name }}<br>
+                                            Tur: {{ book.type.name }}<br>
+                                            Qo'shilgan sana: {{ book.created|date:"d.m.Y" }}
+                                        </small>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<script>
+    // Oylik nomlarni O‘zbek tiliga o‘zgartirish
+    const uzbekMonths = [
+        "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
+        "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+    ];
+
+    // Hujjatlar Statistikasi (oylar bo‘yicha Bar Chart)
+    const documentCtx = document.getElementById('documentChart').getContext('2d');
+    new Chart(documentCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ month_labels|safe }},
+            datasets: [{
+                label: 'Hujjatlar',
+                data: {{ document_monthly_stats|safe }},
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#17a2b8',
+                    '#dc3545', '#6c757d', '#6610f2', '#20c997',
+                    '#fd7e14', '#6f42c1', '#e83e8c', '#343a40'
+                ],
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Hujjat Turlari Statistikasi (Pie Chart, Ranglar Har xil)
+    const documentTypeCtx = document.getElementById('documentTypeChart').getContext('2d');
+    new Chart(documentTypeCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ document_types_data.labels|safe }},
+            datasets: [{
+                label: 'Hujjat Turlari',
+                data: {{ document_types_data.data|safe }},
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                    '#FF9F40', '#FF5733', '#C70039', '#900C3F', '#581845'
+                ],
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Kitoblar Statistikasi (Oylar bo‘yicha Line Chart, Primary Rangda)
+    const bookCtx = document.getElementById('bookChart').getContext('2d');
+    new Chart(bookCtx, {
+        type: 'line',
+        data: {
+            labels: {{ month_labels|safe }},
+            datasets: [{
+                label: 'Kitoblar',
+                data: {{ book_monthly_stats|safe }},
+                backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                borderColor: '#007bff',
+                borderWidth: 2,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+</script>
+
+<style>
+    .small-box {
+        transition: all 0.3s ease-in-out;
+    }
+    .small-box:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+    .bg-gradient-1 {
+        background-color: #007bff;
+    }
+    .bg-gradient-2 {
+        background: linear-gradient(to right, #28a745, #1d6f36);
+    }
+    .bg-gradient-3 {
+        background: linear-gradient(to right, #ffc107, #e0a800);
+    }
+    .bg-gradient-4 {
+        background: linear-gradient(to right, #17a2b8, #117a8b);
+    }
+    .bg-gradient-5 {
+        background: linear-gradient(to right, #007bff, #b21f2d);
+    }
+    .bg-gradient-6 {
+        background: linear-gradient(to right, #28a745, #495057);
+    }
+    .bg-gradient-7 {
+        background: linear-gradient(to right, #ffc107, #117a8b);
+    }
+    .bg-gradient-8 {
+        background: linear-gradient(to right, #117a8b, #117a8b);
+    }
+</style>
+{% endblock %}

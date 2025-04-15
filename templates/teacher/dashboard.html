@@ -1,0 +1,153 @@
+{% extends 'base2.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+
+    <!-- Statistikalar -->
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Hujjatlar Statistikasi -->
+                <div class="col-lg-6 col-12">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3>{{ latest_documents.count }}</h3>
+                            <p>Qo‘shgan Hujjatlaringiz</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <a href="{% url 'user_docs' %}" class="small-box-footer">
+                            Batafsil <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Kitoblar Statistikasi -->
+                <div class="col-lg-6 col-12">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ latest_books.count }}</h3>
+                            <p>Qo‘shgan Kitoblaringiz</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <a href="{% url 'user_books' %}" class="small-box-footer">
+                            Batafsil <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faollik Statistikasi -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Hujjatlar (Oxirgi 6 oy)</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="documentChart" style="height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Kitoblar (Oxirgi 6 oy)</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="bookChart" style="height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oxirgi Qo‘shilganlar -->
+            <div class="row">
+                <!-- Oxirgi hujjatlar -->
+                <div class="col-md-6">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Oxirgi qo‘shilgan hujjatlar</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for doc in latest_documents %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ doc.name }}
+                                        <a href="{% url 'document_detail' doc.pk %}" class="badge badge-primary badge-pill">
+                                            Ko‘rish
+                                        </a>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item">Hujjat topilmadi</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Oxirgi kitoblar -->
+                <div class="col-md-6">
+                    <div class="card card-success">
+                        <div class="card-header">
+                            <h3 class="card-title">Oxirgi qo‘shilgan kitoblar</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for book in latest_books %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ book.name }}
+                                        <a href="{% url 'book_detail' book.pk %}" class="badge badge-success badge-pill">
+                                            Ko‘rish
+                                        </a>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item">Kitob topilmadi</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<script>
+    const months = {{ months|safe }};  // ✅ Yanvardan boshlab tartibga solingan oylar
+
+    // Hujjat Faolligi
+    new Chart(document.getElementById('documentChart'), {
+        type: 'bar',
+        data: {
+            labels: months,  // ✅ Oy nomlari to‘g‘ri chiqadi
+            datasets: [{
+                label: 'Hujjatlar',
+                data: {{ document_activity|safe }},
+                backgroundColor: 'rgba(0, 123, 255, 0.6)'
+            }]
+        }
+    });
+
+    // Kitob Faolligi
+    new Chart(document.getElementById('bookChart'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Kitoblar',
+                data: {{ book_activity|safe }},
+                borderColor: 'rgba(40, 167, 69, 0.8)',
+                fill: false
+            }]
+        }
+    });
+</script>
+
+{% endblock %}

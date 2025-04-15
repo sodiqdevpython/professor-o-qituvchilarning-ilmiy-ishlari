@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Shaxsiy Ish Rejalari</h1>
+                </div>
+                <div class="col-sm-6 d-flex justify-content-end">
+                    <form method="get" class="form-inline">
+                        <div class="form-group mr-2">
+                            <select name="faculty" class="form-control" onchange="this.form.submit()">
+                                <option value="">Barcha fakultetlar</option>
+                                {% for faculty in faculties %}
+                                    <option value="{{ faculty.id }}" {% if faculty.id|stringformat:"s" == selected_faculty %}selected{% endif %}>
+                                        {{ faculty.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select name="document_type" class="form-control" onchange="this.form.submit()">
+                                <option value="">Barcha hujjat turlari</option>
+                                {% for doc_type in document_types %}
+                                    <option value="{{ doc_type.id }}" {% if doc_type.id|stringformat:"s" == selected_doc_type %}selected{% endif %}>
+                                        {{ doc_type.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card card-outline card-info">
+                <div class="card-header">
+                    <h3 class="card-title">Hodimlarning shaxsiy ish rejalari</h3>
+                </div>
+                <div class="card-body">
+                    <table id="performanceTable" class="table table-bordered table-hover">
+                        <thead class="bg-primary text-white text-center">
+                            <tr>
+                                <th>#</th>
+                                <th>F.I.Sh.</th>
+                                {% for type in data.0.keys %}
+                                    {% if "_plan" in type %}
+                                        <th>{{ type|slice:":-5" }} (Reja)</th>
+                                        <th>{{ type|slice:":-5" }} (Amalda)</th>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data %}
+                            <tr>
+                                <td class="text-center">{{ forloop.counter }}</td>
+                                <td>{{ row.name }}</td>
+                                {% for key, value in row.items %}
+                                    {% if "_plan" in key or "_actual" in key %}
+                                        <td class="text-center">{{ value|default:"-" }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <th colspan="2" class="text-right">Jami:</th>
+                                {% for key in data.0.keys %}
+                                    {% if "_plan" in key %}
+                                        <th class="text-center">{{ total|get:key|default:"-" }}</th>
+                                        <th class="text-center">{{ total|get:key|default:"-" }}</th>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </tfoot>                        
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between mb-3">
+                <div>
+                    <button class="btn btn-danger" onclick="downloadPDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-primary" onclick="downloadDOCX()">
+                        <i class="fas fa-file-word"></i> Word
+                    </button>
+                    <button class="btn btn-success" onclick="downloadHTML()">
+                        <i class="fas fa-file-code"></i> HTML
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="{% static 'plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<script>
+    $(document).ready(function () {
+        $('#performanceTable').DataTable({
+            paging: true,
+            searching: true,
+            responsive: true,
+            order: [[0, 'asc']],
+            columnDefs: [{ targets: 0, orderable: false }]
+        });
+    });
+
+    function downloadPDF() {
+        window.location.href = "{% url 'performance_download' format='pdf' %}";
+    }
+
+    function downloadDOCX() {
+        window.location.href = "{% url 'performance_download' format='docx' %}";
+    }
+
+    function downloadHTML() {
+        window.location.href = "{% url 'performance_download' format='html' %}";
+    }
+</script>
+{% endblock %}

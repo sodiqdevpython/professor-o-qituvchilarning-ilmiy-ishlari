@@ -1,0 +1,47 @@
+{% extends 'base2.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Men qo‘shgan kitoblar</h1>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{% url 'create_books' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Yangi kitob qo‘shish
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                {% for book in books %}
+                <div class="col-md-4">
+                    <div class="card">
+                        {% if book.image %}
+                        <img src="{{ book.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <img src="{% static 'images/no-image.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ book.name }}</h5>
+                            <p class="card-text"><strong>Yaratilgan:</strong> {{ book.created|date:"d.m.Y" }}</p>
+                            <a href="{% url 'book_detail' book.pk %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-eye"></i> Ko‘rish
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center">Hozircha hech qanday kitob qo‘shmagansiz.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

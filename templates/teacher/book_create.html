@@ -1,0 +1,57 @@
+{% extends 'base2.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Yangi kitob qo‘shish</h1>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{% url 'user_books' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Ortga
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="card card-warning">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>{{ form.name.label }}</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.type.label }}</label>
+                            {{ form.type }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.file.label }}</label>
+                            {{ form.file }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.image.label }}</label>
+                            {{ form.image }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.more_info.label }}</label>
+                            {{ form.more_info }}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> Saqlash
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

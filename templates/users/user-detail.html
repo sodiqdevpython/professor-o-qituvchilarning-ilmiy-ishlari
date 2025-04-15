@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <!-- Profil sarlavhasi -->
+    <div class="ribbon-wrapper ribbon-lg">
+        <div class="ribbon bg-primary">
+            {{ user_profile.get_full_name|default:user_profile.username }}
+        </div>
+    </div>
+
+    <!-- Content Header -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Foydalanuvchi Profili</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="#">Asosiy</a></li>
+                        <li class="breadcrumb-item active">Foydalanuvchi</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profil & Faollik & Tabs -->
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Chap ustun -->
+                <div class="col-md-4">
+                    <!-- Profil Kartasi -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile text-center">
+                            {% if user_profile.profile_image %}
+                                <img class="img-fluid" 
+                                     src="{{ user_profile.profile_image.url }}"
+                                     alt="Profile Image"
+                                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                                <img class="img-fluid"
+                                     src="{% static 'images/default-profile.png' %}"
+                                     alt="Default User Image"
+                                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 4px;">
+                            {% endif %}
+                            
+                            <h3 class="profile-username mt-3">
+                                {{ user_profile.get_full_name|default:user_profile.username }}
+                            </h3>
+                            
+                            <p class="text-muted">
+                                {{ user_profile.get_username }}
+                            </p>
+
+                            <ul class="list-group list-group-unbordered mb-3 text-left">
+                                <li class="list-group-item">
+                                    <b>Telefon:</b>
+                                    <span class="float-right">{{ user_profile.tel_number }}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Fakultet:</b>
+                                    <span class="float-right">
+                                        {% if user_profile.faculty %}
+                                            {{ user_profile.faculty.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Foydalanuvchi turi:</b>
+                                    <span class="float-right">
+                                        {{ user_profile.get_type_display|default:"Noma'lum" }}
+                                    </span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Oxirgi login:</b>
+                                    <span class="float-right">
+                                        {% if user_profile.last_login %}
+                                            {{ user_profile.last_login|date:"d.m.Y H:i" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </span>
+                                </li>
+                            </ul>
+
+                            <!-- Tahrirlash tugmasi (o'zgaruvchan URL) -->
+                            <a href="{% url 'user_update' user_profile.pk  %}" class="btn btn-warning btn-block">
+                                <i class="fas fa-edit"></i> Tahrirlash
+                            </a>
+
+                            <form action="{% url 'logout' %}" method="POST">
+                                {% csrf_token %}
+                                <input class='btn btn-danger btn-block' type="submit" value='Chiqish'>
+                            </form>
+                            
+                        </div>
+                    </div>
+
+                    <!-- Faollik chizig'i -->
+                    <div class="card">
+                        <div class="card-header bg-info">
+                            <h3 class="card-title">Faollik (Oxirgi oylar bo'yicha)</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="faollikChart" style="height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- O'ng ustun -->
+                <div class="col-md-8">
+                    <div class="card card-tabs">
+                        <div class="card-header p-2">
+                            <ul class="nav nav-pills">
+                                <!-- 1) Documents -->
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#documents_tab" data-toggle="tab">
+                                        Ishlar
+                                    </a>
+                                </li>
+                                <!-- 2) Timeline -->
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#timeline_tab" data-toggle="tab">
+                                        Taymline
+                                    </a>
+                                </li>
+                                <!-- 3) Requirements -->
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#requirements_tab" data-toggle="tab">
+                                        Talablar
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <!-- 1) Documents -->
+                                <div class="tab-pane active" id="documents_tab">
+                                    <h4 class="text-center mb-3">Foydalanuvchi tizimga qo'shgan ishlari</h4>
+                                    
+                                    <!-- Filtrlash formasi: Document Type bo'yicha -->
+                                    <form method="GET" class="form-inline mb-3">
+                                        <label for="doc_type" class="mr-2">Filtrlash:</label>
+                                        <select name="doc_type" id="doc_type" class="form-control mr-2">
+                                            <option value="">Barcha turlar</option>
+                                            {% for dt in document_types %}
+                                                <option value="{{ dt.id }}"
+                                                    {% if selected_type == dt.id|stringformat:"s" %}selected{% endif %}>
+                                                    {{ dt.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-filter"></i> Izlash
+                                        </button>
+                                    </form>
+
+                                    <!-- Documents ro'yxati -->
+                                    {% if documents %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead>
+                                                    <tr class="bg-light">
+                                                        <th>Nom</th>
+                                                        <th>Turi</th>
+                                                        <th>Yaratilgan sana</th>
+                                                        <th>Ko'rish</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for doc in documents %}
+                                                    <tr>
+                                                        <td>{{ doc.name }}</td>
+                                                        <td>{{ doc.type.name }}</td>
+                                                        <td>{{ doc.created|date:"d.m.Y H:i" }}</td>
+                                                        <td>
+                                                            {% if doc.file %}
+                                                                <a href="{{ doc.file.url }}"
+                                                                   target="_blank"
+                                                                   class="btn btn-sm btn-info">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Hozircha documentlar topilmadi</p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 2) Timeline -->
+                                <div class="tab-pane" id="timeline_tab">
+                                    <h4 class="text-center mb-3">Timeline</h4>
+                                    <div class="timeline timeline-inverse">
+                                        {% for hist in timeline_records %}
+                                            <div class="time-label">
+                                                <span class="bg-warning">
+                                                    {{ hist.history_date|date:"d M Y H:i" }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-file bg-info"></i>
+                                                <div class="timeline-item">
+                                                    <span class="time">
+                                                        <i class="fas fa-clock"></i>
+                                                        {{ hist.history_date|time:"H:i" }}
+                                                    </span>
+                                                    <h3 class="timeline-header">
+                                                        {{ hist.name }}
+                                                    </h3>
+                                                    <div class="timeline-body">
+                                                        <b>Tarixiy o'zgarish turi:</b>
+                                                        {% if hist.history_type == '+' %}
+                                                            Yaratilgan
+                                                        {% elif hist.history_type == '~' %}
+                                                            Tahrirlangan
+                                                        {% elif hist.history_type == '-' %}
+                                                            O'chirilgan
+                                                        {% endif %}
+                                                        <br>
+                                                        <b>ID:</b> {{ hist.id }}
+                                                        <br>
+                                                        <b>Type:</b> 
+                                                        {% if hist.type %}
+                                                          {{ hist.type.name }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% empty %}
+                                            <p class="text-muted text-center">Hech qanday tarixiy o'zgarish topilmadi</p>
+                                        {% endfor %}
+                                        <div>
+                                            <i class="fas fa-clock bg-gray"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3) Requirements -->
+                                <div class="tab-pane" id="requirements_tab">
+                                    <h4 class="text-center mb-3">Talablar</h4>
+                                    {% if requirements %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead>
+                                                    <tr class="bg-light">
+                                                        <th>Turi</th>
+                                                        <th>Rejada bor</th>
+                                                        <th>Amalda</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for req in requirements %}
+                                                    <tr>
+                                                        <td>{{ req.document_type.name }}</td>
+                                                        <td>{{ req.numbers }}</td>
+                                                        <td>{{ req.in_use }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Hozircha Requirements topilmadi</p>
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+			<!-- Statistika bo'limi -->
+			<hr>
+			<h4 class="text-center mb-3">
+			Statistika - {{ user_profile.first_name }} {{ user_profile.last_name }}
+			</h4>
+
+			<div class="row mb-3 justify-content-center">
+			<!-- Filtrlash formasi (yil tanlash) -->
+			<div class="col-auto">
+				<form method="GET" class="form-inline">
+				<label for="req_year" class="mr-2">Yilni tanlang:</label>
+				<select name="req_year" id="req_year" class="form-control mr-2">
+					{% for y in req_years_list %}
+					<option value="{{ y }}" {% if y == req_selected_year %}selected{% endif %}>{{ y }}</option>
+					{% endfor %}
+				</select>
+				<button type="submit" class="btn btn-primary">Filtrlash</button>
+				</form>
+			</div>
+
+			<!-- PNG yuklab olish tugmasi -->
+			<div class="col-auto">
+				<button class="btn btn-info" id="downloadPngBtn">
+				<i class="fas fa-download"></i> PNG
+				</button>
+			</div>
+			</div>
+
+			<!-- Canvasni scroll bilan o'rab turish -->
+			<div style="overflow-x: auto; width:100%;">
+			<canvas id="reqChart" style="min-width:900px; height:400px;"></canvas>
+			</div>
+
+            <!-- Pastda - Kitoblar Cards + Paginatsiya (hozircha pagination yo'q, istasangiz qo'shishingiz mumkin) -->
+            <hr>
+            <h4 class="text-center mb-3">Foydalanuvchi qo'shgan Kitoblar</h4>
+            <div class="row">
+                {% if books %}
+                    {% for bk in books %}
+                    <div class="col-sm-6 col-md-4">
+                        <div class="card card-primary card-outline">
+                            <!-- Card Header -->
+                            <div class="card-header text-center">
+                                <h5 class="card-title mb-0">{{ bk.name }}</h5>
+                            </div>
+                            <!-- Rasm -->
+                            <div class="card-body p-0 position-relative">
+                                {% if bk.image %}
+                                    <img class="img-fluid"
+                                         src="{{ bk.image.url }}"
+                                         alt="Book Image"
+                                         style="width: 100%; height: 220px; object-fit: cover;">
+                                {% else %}
+                                    <img class="img-fluid"
+                                         src="{% static 'images/default_book.png' %}"
+                                         alt="Default Book Image"
+                                         style="width: 100%; height: 220px; object-fit: cover;">
+                                {% endif %}
+                                <div class="ribbon-wrapper ribbon-lg">
+                                    <div class="ribbon bg-primary">
+                                        {{ bk.type.name }}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Footer -->
+                            <div class="card-footer">
+                                <p class="mb-1">
+                                    <b>Qo'shilgan:</b> 
+                                    {{ bk.created|date:"d.m.Y" }}
+                                </p>
+                                <!-- Agar ko'rish uchun link bo'lsa -->
+                                {% if bk.file %}
+                                <a href="{% url 'book_detail' bk.id %}" class="btn btn-info btn-block">
+                                    <i class="fas fa-eye"></i> Ko‘rish
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="mx-auto text-muted">Hozircha kitoblar topilmadi.</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Chart.js -->
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<script>
+    // Faollik Chart
+    const ctx = document.getElementById('faollikChart').getContext('2d');
+    const faollikChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ faollik_months|safe }}, // Masalan: ['Sep 2024', 'Oct 2024', ...]
+            datasets: [{
+                label: 'Faollik',
+                data: {{ faollik_counts|safe }}, // [2, 3, 1, ...]
+                backgroundColor: 'rgba(60,141,188,0.2)',
+                borderColor: 'rgba(60,141,188,1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    stepSize: 0
+                }
+            }
+        }
+    });
+
+	const reqLabels     = {{ req_chart_labels|safe }};
+	const reqRejaData   = {{ req_chart_reja|safe }};     // [2, 5, ...]
+	const reqAmaldaData = {{ req_chart_amalda|safe }};   // [1, 2, ...]
+
+	// Canvas
+	const ctx2 = document.getElementById('reqChart').getContext('2d');
+
+	// Chart.js 3.4+ da title va subtitle default pluginlari mavjud.
+	// Agar sizda chiqmasa, demak versiya eski yoki plugin o‘chirilgan.
+	const reqChart = new Chart(ctx2, {
+	type: 'bar',
+	data: {
+		labels: reqLabels,
+		datasets: [
+		{
+			label: 'Reja',
+			data: reqRejaData,
+			backgroundColor: '#2196f3',  // ko'k
+		},
+		{
+			label: 'Amalda',
+			data: reqAmaldaData,
+			backgroundColor: '#ff6384',  // pushti
+		}
+		]
+	},
+	options: {
+		responsive: true,
+		maintainAspectRatio: false,
+		// Title / subtitle plugin
+		plugins: {
+		title: {
+			display: true,
+			text: '{{ user_profile.first_name }} {{ user_profile.last_name }}',
+			color: '#fff',        // Agar fon qora bo'lsa, matn oq qilamiz. Yoki #000 bo'lsin.
+			font: {
+			size: 16,
+			weight: 'bold'
+			}
+		},
+		subtitle: {
+			display: true,
+			text: 'Yil: {{ req_selected_year }}',
+			color: '#fff',        // Agar fon qora bo'lsa, matn oq qilamiz
+			position: 'bottom',
+			font: {
+			size: 14,
+			style: 'italic'
+			}
+		}
+		},
+		scales: {
+		x: {
+			barPercentage: 0.4,           // Bar eni
+			categoryPercentage: 0.8,
+			ticks: {
+			color: '#fff'               // Agar fon qora
+			}
+		},
+		y: {
+			beginAtZero: true,
+			min: 0,
+			ticks: {
+			stepSize: 0,                // Faqat butun sonlar (0,1,2,3,...)
+			color: '#fff'
+			},
+			// Ehtimol, 1 balandlikni yanada sezilarli qilish uchun ozroq bo'sh joy
+			// grace: 0.5  // bar 1 bo'lsa ham aniq ko'rinadi
+		}
+		}
+	}
+	});
+
+	// PNG yuklab olish
+	document.getElementById('downloadPngBtn').addEventListener('click', function() {
+	// toBase64Image => PNG rasm
+	const base64URL = reqChart.toBase64Image();
+	const link = document.createElement('a');
+	link.href = base64URL;
+	link.download = 'requirements_chart.png';
+	link.click();
+	});
+
+</script>
+{% endblock %}

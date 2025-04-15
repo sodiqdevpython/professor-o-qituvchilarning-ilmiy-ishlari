@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+    <!-- Content Header -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>{{ document.name }}</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'docs' %}">Ilmiy Ishlar</a>
+                        </li>
+                        <li class="breadcrumb-item active">{{ document.name }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Document & Author Info -->
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- LEFT COLUMN: Document Info -->
+                <div class="col-md-4">
+                    <div class="card card-primary card-outline shadow-lg">
+                        {% if document.image %}
+                        <img src="{{ document.image.url }}"
+                             class="card-img-top rounded"
+                             alt="{{ document.name }}"
+                             style="height: 250px; object-fit: cover;">
+                        {% else %}
+                        <img src="{% static 'images/default-document.png' %}"
+                             class="card-img-top rounded"
+                             alt="Default Document Image"
+                             style="height: 250px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ document.name }}</h5>
+                            <p class="card-text">
+                                <strong>Muallif:</strong> {{ document.author.first_name }} {{ document.author.last_name }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Yaratilgan Sana:</strong> {{ document.created|date:"d.m.Y" }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Tur:</strong> {{ document.type.name }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Fakultet:</strong>
+                                {% if document.author.faculty %}
+                                {{ document.author.faculty.name }}
+                                {% else %}
+                                Noma'lum
+                                {% endif %}
+                            </p>
+                            {% if document.more_info %}
+                            <p class="card-text">
+                                <strong>Qo'shimcha Ma'lumot:</strong>
+                                {{ document.more_info }}
+                            </p>
+                            {% endif %}
+                            {% if document.url %}
+                            <a href="{{ document.url }}" 
+                               class="btn btn-info btn-block mt-2"
+                               target="_blank">
+                                <i class="fas fa-external-link-alt"></i> Tashqi Havola
+                            </a>
+                            {% endif %}
+                            <a href="{{ document.file.url }}" 
+                               class="btn btn-success btn-block mt-2"
+                               download>
+                                <i class="fas fa-download"></i> Yuklab Olish
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Author Info -->
+                <div class="col-md-8">
+                    <div class="card card-info card-outline shadow-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">Muallif haqida</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if author.profile_image %}
+                            <img src="{{ author.profile_image.url }}" 
+                                 alt="Author Image"
+                                 class="img-circle elevation-2 shadow"
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                            {% else %}
+                            <img src="{% static 'images/default-profile.png' %}"
+                                 alt="Default Author Image"
+                                 class="img-circle elevation-2 shadow"
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                            {% endif %}
+                            <h4 class="mt-2">{{ author.first_name }} {{ author.last_name }}</h4>
+                            <p class="text-muted mb-1">
+                                <strong>Telefon:</strong> {{ author.tel_number }}
+                            </p>
+                            <p class="text-muted">
+                                <strong>Fakultet:</strong>
+                                {% if author.faculty %}
+                                {{ author.faculty.name }}
+                                {% else %}
+                                Noma'lum
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTHER DOCUMENTS by Author -->
+            {% if other_documents %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card card-primary card-outline shadow-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">Muallifning boshqa ilmiy ishlari</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for doc in other_documents %}
+                                <div class="col-md-3 col-sm-6 mb-4">
+                                    <div class="card h-100 shadow">
+                                        {% if doc.image %}
+                                        <img src="{{ doc.image.url }}" 
+                                             class="card-img-top rounded-top"
+                                             alt="{{ doc.name }}"
+                                             style="height: 150px; object-fit: cover;">
+                                        {% else %}
+                                        <img src="{% static 'images/default-document.png' %}" 
+                                             class="card-img-top rounded-top"
+                                             alt="Default Document"
+                                             style="height: 150px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body d-flex flex-column">
+                                            <h6 class="card-title text-center">{{ doc.name }}</h6>
+                                            <a href="{% url 'document_detail' doc.id %}" 
+                                               class="btn btn-primary mt-auto">
+                                               Batafsil
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- OTHER BOOKS by Author -->
+            {% if other_books %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card card-warning card-outline shadow-lg">
+                        <div class="card-header">
+                            <h3 class="card-title">Muallifning Kitoblari</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for book in other_books %}
+                                <div class="col-md-3 col-sm-6 mb-4">
+                                    <div class="card h-100 shadow">
+                                        {% if book.image %}
+                                        <img src="{{ book.image.url }}" 
+                                             class="card-img-top rounded-top"
+                                             alt="{{ book.name }}"
+                                             style="height: 150px; object-fit: cover;">
+                                        {% else %}
+                                        <img src="{% static 'images/default-book.png' %}" 
+                                             class="card-img-top rounded-top"
+                                             alt="Default Book Image"
+                                             style="height: 150px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body d-flex flex-column">
+                                            <h6 class="card-title text-center">{{ book.name }}</h6>
+                                            <a href="{% url 'book_detail' book.id %}" 
+                                               class="btn btn-primary mt-auto">
+                                               Batafsil
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
